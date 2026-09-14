@@ -108,15 +108,6 @@
                             </div>
                         @endif
 
-                        @php
-                            $lockedTypesMap = [];
-                            foreach($utips as $utip) {
-                                $lockedTypesMap[$utip->type] = false;
-                            }
-                            foreach($lockedTypes as $lt) {
-                                $lockedTypesMap[$lt] = true;
-                            }
-                        @endphp
                         <script>
                             const lockedTypes = @json($lockedTypes);
                         </script>
@@ -144,7 +135,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Tipe</label>
-                                <select name="type" required onchange="checkUtipLocked(this.value)"
+                                <select name="type" required
                                     class="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-800 focus:outline-none focus:border-red-400 bg-white">
                                     <option value="UTIP Corrective">UTIP Corrective</option>
                                     <option value="New UTIP Jul 2025">New UTIP Jul 2025</option>
@@ -166,12 +157,6 @@
                                     <option value="New UTIP Nov 2026">New UTIP Nov 2026</option>
                                     <option value="New UTIP Des 2026">New UTIP Des 2026</option>
                                 </select>
-                                <div id="utip-locked-warning" class="hidden mt-2 flex items-center space-x-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                    </svg>
-                                    <p class="text-xs font-bold">Tipe UTIP ini sudah dinonaktifkan.</p>
-                                </div>
                             </div>
                         </div>
 
@@ -387,21 +372,6 @@
         </div>
     </div>
     <script>
-        function checkUtipLocked(type) {
-            const btn     = document.getElementById('btn-utip-simpan');
-            const warning = document.getElementById('utip-locked-warning');
-            const isLocked = type && lockedTypes.includes(type);
-
-            if (isLocked) {
-                warning.classList.remove('hidden');
-                btn.disabled = true;
-                btn.className = 'flex items-center space-x-2 bg-slate-400 cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl uppercase tracking-wider shadow-md transition-all duration-200';
-            } else {
-                warning.classList.add('hidden');
-                btn.disabled = false;
-                btn.className = 'flex items-center space-x-2 bg-slate-900 hover:bg-red-600 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all duration-200 uppercase tracking-wider shadow-md hover:shadow-lg hover:shadow-red-200';
-            }
-        }
         // ── Auto-fill kondisi UTIP dari Excel (SALDO AWAL / PLAN / SECURING) ──
         function autoFillFromExcel(input) {
             const file = input.files[0];
