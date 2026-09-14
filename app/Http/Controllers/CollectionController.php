@@ -10,6 +10,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CollectionController extends Controller
 {
@@ -512,10 +514,9 @@ class CollectionController extends Controller
     public function storeUtipRealisasi(Request $request)
     {
         $request->validate([
-           
             'periode'      => 'required|date_format:Y-m',
             'type'         => 'required|string',
-            'file'         => 'required|file|mimes:xlsx,xls,csv|max:51200',
+            'file'         => 'nullable|file|mimes:xlsx,xls,csv|max:51200',
             'kondisi'      => 'required|array|size:7',
             'kondisi.*'    => 'required|string',
             'plan'         => 'required|array|size:7',
@@ -528,66 +529,69 @@ class CollectionController extends Controller
 
         $periodeDate = $request->periode . '-01';
 
-        $isUpdate = Collection::where('type', $request->type)
-            ->where('periode', $periodeDate)
-            ->where('is_latest', true)
-            ->exists();
+        try {
+            DB::transaction(function () use ($request, $periodeDate) {
+                // 1. Ambil SEMUA data lama yang punya `type` sama persis dengan yang dipilih
+                $oldCollections = Collection::where('type', $request->type)->get();
 
-        // Cek status locked
-        $latest = Collection::where('type', $request->type)
-            ->where('is_latest', true)
-            ->first();
+                // 2. Hapus file-file fisik lama dari storage jika ada
+                foreach ($oldCollections as $old) {
+                    if ($old->file_path && Storage::disk('public')->exists($old->file_path)) {
+                        Storage::disk('public')->delete($old->file_path);
+                    }
+                }
 
-        if ($latest && $latest->status === 'inactive') {
-            return back()->with('error', 'Tipe UTIP ini sudah dinonaktifkan. Realisasi tidak dapat disimpan.');
+                // 3. Hapus SEMUA record lama yang memiliki `type` tersebut di database
+                Collection::where('type', $request->type)->delete();
+
+                $submitToken = Str::uuid()->toString();
+                $filePath = null;
+                $fileName = null;
+
+                // 4. Simpan file baru (jika user mengupload file)
+                if ($request->hasFile('file')) {
+                    $file     = $request->file('file');
+                    $fileName = $file->getClientOriginalName();
+                    $filePath = $file->store('utip_files', 'public');
+                } else {
+                    // Jika tidak upload file baru tapi ada file lama dari type tersebut, pakai yang lama
+                    $firstOld = $oldCollections->whereNotNull('file_path')->first();
+                    $filePath = $firstOld ? $firstOld->file_path : null;
+                    $fileName = $firstOld ? $firstOld->file_name : null;
+                }
+
+                // 5. Simpan 7 baris data baru untuk TIPE tersebut
+                foreach ($request->kondisi as $idx => $kondisiName) {
+                    $planVal = ($request->plan[$idx] !== null && $request->plan[$idx] !== '') ? $request->plan[$idx] : null;
+                    $realVal = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '') ? $request->real_ratio[$idx] : null;
+                    $olFmVal = ($request->ol_fm[$idx] !== null && $request->ol_fm[$idx] !== '') ? $request->ol_fm[$idx] : null;
+
+                    if (is_null($planVal) && is_null($realVal) && is_null($olFmVal)) {
+                        continue;
+                    }
+
+                    Collection::create([
+                        'user_id'         => Auth::id(),
+                        'type'            => $request->type,
+                        'kondisi'         => $kondisiName,
+                        'periode'         => $periodeDate,
+                        'status'          => 'active',
+                        'is_latest'       => true,
+                        'plan'            => $planVal,
+                        'ol_fm'           => $olFmVal,
+                        'real_ratio'      => $realVal,
+                        'real_updated_at' => !is_null($realVal) ? now() : null,
+                        'file_path'       => $filePath,
+                        'file_name'       => $fileName,
+                        'submit_token'    => $submitToken,
+                    ]);
+                }
+            });
+
+            return back()->with('success', 'Data UTIP berhasil disimpan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage())->withInput();
         }
-
-        Collection::where('type', $request->type)
-        ->where('periode', $periodeDate)
-        ->update(['is_latest' => false]);
-
-        $submitToken = \Illuminate\Support\Str::uuid()->toString();
-        $filePath = null;
-        $fileName = null;
-        if ($request->hasFile('file')) {
-            $file     = $request->file('file');
-            $fileName = $file->getClientOriginalName();
-            $filePath = $file->store('utip_files', 'public');
-        }
-
-        foreach ($request->kondisi as $idx => $kondisiName) {
-            $existing = Collection::where('type', $request->type)
-                ->where('periode', $periodeDate)
-                ->where('kondisi', $kondisiName)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $planVal   = ($request->plan[$idx] !== null && $request->plan[$idx] !== '') ? $request->plan[$idx] : null;
-            $realVal   = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '') ? $request->real_ratio[$idx] : null;
-            $olFmVal   = ($request->ol_fm[$idx] !== null && $request->ol_fm[$idx] !== '') ? $request->ol_fm[$idx] : null;
-
-            if (is_null($planVal) && is_null($realVal) && is_null($olFmVal)) {
-                continue;
-            }
-
-           Collection::create([
-            'user_id'         => Auth::id(),
-            'type'            => $request->type,
-            'kondisi'         => $kondisiName,
-            'periode'         => $periodeDate,
-            'status'          => 'active',
-            'is_latest'       => true,
-            'plan'            => $planVal ?? ($existing->plan ?? null),
-            'ol_fm'           => $olFmVal ?? ($existing->ol_fm ?? null),
-            'real_ratio'      => $realVal ?? ($existing->real_ratio ?? null),
-            'real_updated_at' => !is_null($realVal) ? now() : ($existing->real_updated_at ?? null),
-            'file_path'       => $filePath,
-            'file_name'       => $fileName,
-            'submit_token'    => $submitToken,
-            ]);
-        }
-
-        return back()->with('success', 'Data UTIP berhasil disimpan');
     }
      public function utipPreviewImport(Request $request)
     {
