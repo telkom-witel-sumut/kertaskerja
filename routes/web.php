@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\IntimacyMonitoringController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin2Controller;
@@ -13,6 +14,9 @@ use App\Http\Controllers\SmeController;
 use App\Http\Controllers\SoeController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\NgtmaController;
+
+// V.2
+use App\Http\Controllers\ActivityImportController;
 
 Route::get('/', function () {
     return redirect()->route('auth.login.form');
@@ -174,7 +178,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/scalling/sme/initiate', [ScallingController::class, 'initiateSme'])->name('admin.scalling.sme.initiate');
         Route::post('/scalling/sme/initiate', [ScallingController::class, 'storeData'])->name('admin.scalling.sme.initiate.storeData');
 
-        // Private dashboard (role: private) - admin access
+        // INTIMACY AM MONITORING
+        Route::get('/intimacy-monitoring', [IntimacyMonitoringController::class, 'index'])
+            ->name('admin.intimacy-monitoring');
+        Route::post('/intimacy-monitoring/import', [IntimacyMonitoringController::class, 'store'])
+            ->name('admin.intimacy-monitoring.import');   
+        Route::get('/intimacy-monitoring/import/{import}', [IntimacyMonitoringController::class, 'preview'])
+            ->name('admin.intimacy-monitoring.import.preview');     
+
+            // Private dashboard (role: private) - admin access
         // on-hand upload listing and actions
         Route::get('/scalling/private/on-hand', [ScallingController::class, 'onHandPrivate'])->name('admin.scalling.private.on-hand');
         Route::post('/scalling/private/on-hand', [ScallingController::class, 'import'])->name('admin.scalling.private.on-hand.store');

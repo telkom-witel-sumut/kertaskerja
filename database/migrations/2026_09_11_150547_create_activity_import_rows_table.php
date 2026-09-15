@@ -4,23 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
-        Schema::create('activities', function (Blueprint $table) {
+        Schema::create('activity_import_rows', function (Blueprint $table) {
             $table->id();
 
-            /*
-             * Identitas import yang memasukkan activity ini.
-             */
             $table->foreignId('import_id')
                 ->constrained('activity_imports')
                 ->cascadeOnDelete();
 
+            $table->unsignedInteger('source_row');
+
             $table->string('source_id')->nullable();
-
-            $table->unsignedInteger('source_row')->nullable();
-
             $table->string('nik')->nullable();
             $table->string('name')->nullable();
             $table->string('role')->nullable();
@@ -32,42 +29,28 @@ return new class extends Migration {
             $table->string('ca_name')->nullable();
             $table->string('nipnas')->nullable();
 
-            /*
-             * Waktu activity dari source.
-             */
             $table->dateTime('activity_start_date')->nullable();
             $table->dateTime('activity_end_date')->nullable();
             $table->dateTime('created_at_source')->nullable();
 
             $table->string('label')->nullable();
             $table->string('activity_type')->nullable();
-
             $table->longText('activity_notes')->nullable();
 
-            /*
-             * Status klasifikasi activity.
-             */
-            $table->enum('classification_status', [
-                'pending',
-                'classified',
-                'review_required',
-                'unclassified',
-                'failed',
-            ])->default('pending')->index();
+            $table->string('validation_status')->default('pending');
+            $table->json('validation_errors')->nullable();
+
+            $table->string('classification_status')->default('pending');
 
             $table->timestamps();
 
-            /*
-             * Index yang kemungkinan besar sering dipakai.
-             */
-            $table->index('import_id');
-            $table->index('source_id');
-            $table->index('activity_start_date');
+            $table->index(['import_id', 'validation_status']);
+            $table->index(['import_id', 'classification_status']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('activities');
+        Schema::dropIfExists('activity_import_rows');
     }
 };

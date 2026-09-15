@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Activity extends Model
+class ActivityImportRow extends Model
 {
     protected $fillable = [
         'import_id',
-        'source_id',
         'source_row',
+        'source_id',
         'nik',
         'name',
         'role',
@@ -29,6 +27,8 @@ class Activity extends Model
         'label',
         'activity_type',
         'activity_notes',
+        'validation_status',
+        'validation_errors',
         'classification_status',
         'nama_pic_1',
         'jabatan_pic_1',
@@ -36,6 +36,7 @@ class Activity extends Model
     ];
 
     protected $casts = [
+        'validation_errors' => 'array',
         'activity_start_date' => 'datetime',
         'activity_end_date' => 'datetime',
         'created_at_source' => 'datetime',
@@ -44,22 +45,5 @@ class Activity extends Model
     public function import(): BelongsTo
     {
         return $this->belongsTo(ActivityImport::class, 'import_id');
-    }
-
-    public function activityEntities(): HasMany
-    {
-        return $this->hasMany(ActivityEntity::class);
-    }
-
-    public function entities(): BelongsToMany
-    {
- return $this->belongsToMany(
-        Entity::class,
-        'activity_entities'
-    )->withPivot([
-        'category_id',
-        'match_score',
-        'match_method',
-    ])->withTimestamps();
     }
 }

@@ -19,30 +19,13 @@ return new class extends Migration
                 ->constrained('entities')
                 ->restrictOnDelete();
 
-            /*
-             * Nullable karena rule-based match tidak selalu
-             * menghasilkan similarity score.
-             *
-             * Contoh:
-             * Local Gov → rule → NULL
-             * Iforte → fuzzy → 0.9600
-             */
+          
             $table->decimal('match_score', 5, 4)->nullable();
 
-            /*
-             * Contoh:
-             * rule
-             * exact
-             * fuzzy
-             */
             $table->string('match_method')->nullable();
 
             $table->timestamps();
 
-            /*
-             * Satu activity tidak boleh menghasilkan
-             * entity yang sama dua kali.
-             */
             $table->unique(
                 ['activity_id', 'entity_id'],
                 'activity_entities_activity_entity_unique'

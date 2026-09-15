@@ -24,4 +24,9 @@ class ActivityImport extends Model
     {
         return $this->hasMany(Activity::class, 'import_id');
     }
+
+    public function rows(): HasMany
+    {
+        return $this->hasMany(ActivityImportRow::class, 'import_id');
+    }
 }
