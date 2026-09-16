@@ -30,8 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/report', [ReportController::class, 'index'])->name('report.index');
     Route::get('/report/detail/{segment}/{type}', [ReportController::class, 'detail'])
-    ->name('report.detail')
-    ->middleware('auth');
+        ->name('report.detail')
+        ->middleware('auth');
     Route::get('/report/utip-detail', [ReportController::class, 'utipDetail'])->name('report.utip.detail');
     Route::get('/report/utip-download', [ReportController::class, 'utipDownload'])->name('report.utip.download');
     Route::get('/report/ar-download', [ReportController::class, 'arDownload'])->name('report.ar.download');
@@ -182,11 +182,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/intimacy-monitoring', [IntimacyMonitoringController::class, 'index'])
             ->name('admin.intimacy-monitoring');
         Route::post('/intimacy-monitoring/import', [IntimacyMonitoringController::class, 'store'])
-            ->name('admin.intimacy-monitoring.import');   
+            ->name('admin.intimacy-monitoring.import');
         Route::get('/intimacy-monitoring/import/{import}', [IntimacyMonitoringController::class, 'preview'])
-            ->name('admin.intimacy-monitoring.import.preview');     
+            ->name('admin.intimacy-monitoring.import.preview');
+        Route::post(
+            '/intimacy-monitoring/import/{import}/confirm',
+            [IntimacyMonitoringController::class, 'confirm']
+        )->name('admin.intimacy-monitoring.import.confirm');
 
-            // Private dashboard (role: private) - admin access
+        // Private dashboard (role: private) - admin access
         // on-hand upload listing and actions
         Route::get('/scalling/private/on-hand', [ScallingController::class, 'onHandPrivate'])->name('admin.scalling.private.on-hand');
         Route::post('/scalling/private/on-hand', [ScallingController::class, 'import'])->name('admin.scalling.private.on-hand.store');
@@ -253,18 +257,18 @@ Route::middleware('auth')->group(function () {
         Route::delete('/scalling/sme/qualified/{scallingImport}', [ScallingController::class, 'destroy'])->name('admin.scalling.sme.qualified.destroy');
 
         Route::patch('/scalling/{id}/toggle-status', [ScallingController::class, 'toggleStatus'])
-        ->name('admin.scalling.toggle-status');
+            ->name('admin.scalling.toggle-status');
 
         Route::get('/progress/{segment}/{type}', [ReportController::class, 'progress'])
-        ->name('admin.progress');
+            ->name('admin.progress');
         Route::post('/progress/{segment}/{type}/funnel', [ReportController::class, 'progressFunnelUpdate'])
-        ->name('admin.progress.funnel.update');
+            ->name('admin.progress.funnel.update');
         Route::post('/progress/{segment}/{type}/scalling/update-est-nilai', [ReportController::class, 'progressScallingUpdateEstNilai'])
-        ->name('admin.progress.scalling.update-est-nilai');
+            ->name('admin.progress.scalling.update-est-nilai');
         Route::post('/progress/{segment}/{type}/scalling/update-field', [ReportController::class, 'progressScallingUpdateField'])
-        ->name('admin.progress.scalling.update-field');
+            ->name('admin.progress.scalling.update-field');
         Route::post('/progress/{segment}/koreksi/update-realisasi', [ReportController::class, 'progressKoreksiUpdate'])
-        ->name('admin.progress.koreksi.update-realisasi');
+            ->name('admin.progress.koreksi.update-realisasi');
 
     });
 
@@ -306,7 +310,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/funnel/update', [SoeController::class, 'updateFunnelCheckbox'])->name('dashboard.soe.funnel.update');
 
         Route::post('/scalling/addData', [SoeController::class, 'storeData'])->name('dashboard.soe.add-data');
-        });
+    });
 
     // SME dashboard (role: sme)
     Route::middleware('role:sme')->prefix('dashboard/sme')->group(function () {

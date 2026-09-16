@@ -222,6 +222,54 @@ class ActivityImportService
 
     public function confirm(ActivityImport $import): void
     {
+        DB::transaction(function () use ($import) {
+            if ($import->status !== 'preview') {
+                throw new RuntimeException(
+                    'Import tidak dapat dikonfirmasi pada status saat ini.'
+                );
+            }
 
+            $validRows = $import->rows()
+                ->where('validation_status', 'valid')
+                ->get();
+
+            foreach ($validRows->chunk(500) as $chunk) {
+                $activities = $chunk->map(function ($row) {
+                    return [
+                        'import_id' => $row->import_id,
+                        'source_id' => $row->source_id,
+                        'source_row' => $row->source_row,
+                        'nik' => $row->nik,
+                        'name' => $row->name,
+                        'role' => $row->role,
+                        'am_type' => $row->am_type,
+                        'division' => $row->division,
+                        'segment' => $row->segment,
+                        'regional' => $row->regional,
+                        'witel' => $row->witel,
+                        'ca_name' => $row->ca_name,
+                        'nipnas' => $row->nipnas,
+                        'activity_start_date' => $row->activity_start_date,
+                        'activity_end_date' => $row->activity_end_date,
+                        'created_at_source' => $row->created_at_source,
+                        'label' => $row->label,
+                        'activity_type' => $row->activity_type,
+                        'activity_notes' => $row->activity_notes,
+                        'classification_status' => 'pending',
+                        'nama_pic_1' => $row->nama_pic_1,
+                        'jabatan_pic_1' => $row->jabatan_pic_1,
+                        'peran_pic_1' => $row->peran_pic_1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                })->all();
+
+                DB::table('activities')->insert($activities);
+            }
+
+            $import->update([
+                'status' => 'confirmed',
+            ]);
+        });
     }
 }

@@ -31,4 +31,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'classifier' => [
+        'api_key' => env('CLASSIFIER_API_KEY'),
+    ],
+
+    'python_classifier' => [
+        'url' => env('PYTHON_CLASSIFIER_URL'),
+        'api_key' => env('PYTHON_CLASSIFIER_API_KEY'),
+    ],
 ];

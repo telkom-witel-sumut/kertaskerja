@@ -20,13 +20,21 @@
             <p><strong>Status:</strong> {{ $import->status }}</p>
         </div>
 
+        @if ($import->status === 'preview')
+            <form method="POST" action="{{ route('admin.intimacy-monitoring.import.confirm', $import) }}">
+                @csrf
+
+                <button type="submit">
+                    Confirm Import
+                </button>
+            </form>
+        @endif
         <hr>
 
         <table>
             <thead>
                 <tr>
                     <th>Excel Row</th>
-                    <th>Source ID</th>
                     <th>Name</th>
                     <th>Activity Start</th>
                     <th>Activity notes</th>
@@ -40,7 +48,6 @@
                 @foreach ($rows as $row)
                     <tr>
                         <td>{{ $row->source_row }}</td>
-                        <td>{{ $row->source_id }}</td>
                         <td>{{ $row->name }}</td>
                         <td>{{ $row->activity_start_date }}</td>
                         <td>{{ $row->activity_notes }}</td>
