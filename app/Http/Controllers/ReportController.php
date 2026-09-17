@@ -118,16 +118,21 @@ class ReportController extends Controller
             $cycVals[$seg] = $val['komitmen'] == 0 ? 0 : ($val['realisasi'] / $val['komitmen']) * 100;
         }
 
-        // UTIP Corrective — ambil record terbaru dalam periode filter
-       $utipCorRows = Collection::where('type', 'UTIP Corrective')
-       ->where('is_latest', true)
-       ->get();
+       // UTIP Corrective — Ambil record data terbaru per kondisi
+        $utipCorRows = Collection::where('type', 'UTIP Corrective')
+            ->whereIn('id', function($q) {
+                $q->selectRaw('MAX(id)')
+                ->from('collections')
+                ->where('type', 'UTIP Corrective')
+                ->groupBy('kondisi');
+            })
+            ->get();
 
-        $utipCorPlan = $utipCorRows->sum(fn($r) => $toFloat($r->plan));
-        $utipCorReal = $utipCorRows->sum(fn($r) => $toFloat($r->real_ratio));
+        $utipCorPlan      = $utipCorRows->sum(fn($r) => $toFloat($r->plan));
+        $utipCorReal      = $utipCorRows->sum(fn($r) => $toFloat($r->real_ratio));
         $utipCorSisaSaldo = $utipCorPlan - $utipCorReal;
-        $utipCorUpdated = $utipCorRows->whereNotNull('real_updated_at')->sortByDesc('real_updated_at')->first();
- 
+        $utipCorUpdated   = $utipCorRows->whereNotNull('real_updated_at')->sortByDesc('real_updated_at')->first();
+
         $utipCorrective = [
             'label'      => 'UTIP Corrective',
             'planRp'     => $utipCorRows->isEmpty() ? null : round($utipCorPlan / 1000000, 2),
@@ -195,9 +200,14 @@ class ReportController extends Controller
         $filterDate = Carbon::createFromDate($filterTahun, $filterBulan, 1);
 
         foreach ($periodes as $p) {
-           $rows = Collection::where('type', $p['type'])
-           ->where('is_latest', true)
-           ->get();
+        $rows = Collection::where('type', $p['type'])
+            ->whereIn('id', function($q) use ($p) {
+                $q->selectRaw('MAX(id)')
+                ->from('collections')
+                ->where('type', $p['type'])
+                ->groupBy('kondisi');
+            })
+            ->get();
                 
             $planRaw = $rows->sum(fn($r) => $toFloat($r->plan));
             $realRaw = $rows->sum(fn($r) => $toFloat($r->real_ratio));

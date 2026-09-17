@@ -224,7 +224,8 @@
     @endphp
 
     <div class="min-h-screen" style="background:#f1f5f9;">
-        <div class="max-w-7xl mx-auto px-8 py-10">
+
+    <div class="max-w-7xl mx-auto px-8 py-10">
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 px-10 py-7 mb-8 relative overflow-hidden no-print">
                 <div class="absolute top-0 left-0 right-0 h-1.5" style="background: linear-gradient(90deg, #dc2626, #ef4444, #dc2626);"></div>
