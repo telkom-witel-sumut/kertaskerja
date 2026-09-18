@@ -11,6 +11,8 @@ use App\Models\Psak;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -472,97 +474,80 @@ class AdminController extends Controller
     public function utipStore(Request $request)
     {
         $request->validate([
-            
-            'periode' => 'required|date_format:Y-m',
-            'type'    => 'required|string',
-            'file'    => 'required|file|mimes:xlsx,xls,csv|max:51200',
-
-            
-            'kondisi'   => 'required|array|size:7',
-            'kondisi.*' => 'required|string',
-            'plan'      => 'required|array|size:7',
-            'plan.*'    => 'nullable|numeric',
-            'real_ratio'=> 'required|array|size:7',
+            'periode'      => 'required|date_format:Y-m',
+            'type'         => 'required|string',
+            'file'         => 'required|file|mimes:xlsx,xls,csv|max:51200',
+            'kondisi'      => 'required|array|size:7',
+            'kondisi.*'    => 'required|string',
+            'plan'         => 'required|array|size:7',
+            'plan.*'       => 'nullable|numeric',
+            'real_ratio'   => 'required|array|size:7',
             'real_ratio.*' => 'nullable|numeric',
-            'ol_fm'     => 'required|array|size:7',
-            'ol_fm.*'   => 'nullable|numeric',
-            ], [
-    'file.max' => 'Ukuran file maksimal 50 MB.',
+            'ol_fm'        => 'required|array|size:7',
+            'ol_fm.*'      => 'nullable|numeric',
+        ], [
+            'file.max' => 'Ukuran file maksimal 50 MB.',
         ]);
 
-        $periodeDate = $request->periode . '-01';
+        $periodeDate =$request->periode . '-01';
 
-        $isUpdate = Collection::where('type', $request->type)
-            ->where('periode', $periodeDate)
-            ->where('is_latest', true)
-            ->exists();
+        try {
+            DB::transaction(function () use ($request,$periodeDate) {
+                // 1. Ambil SEMUA data lama berdasarkan `type` (baik di-upload oleh admin/collection sebelumnya)
+                $oldCollections = Collection::where('type',$request->type)->get();
 
-        // Upload file
-        $submitToken = \Illuminate\Support\Str::uuid()->toString();
-        $filePath = null;
-        $fileName = null;
-        if ($request->hasFile('file')) {
-            $file     = $request->file('file');
-            $fileName = $file->getClientOriginalName();
-            $filePath = $file->store('utip_files', 'public');
+                // 2. Hapus file fisik lama dari storage jika ada
+                foreach ($oldCollections as$old) {
+                    if ($old->file_path && Storage::disk('public')->exists($old->file_path)) {
+                        Storage::disk('public')->delete($old->file_path);
+                    }
+                }
+
+                // 3. Hapus bersih record lama di database berdasarkan `type` agar tidak ada data sampah/ganda
+                Collection::where('type', $request->type)->delete();
+
+                // 4. Upload file baru
+                $submitToken = \Illuminate\Support\Str::uuid()->toString();$filePath = null;
+                $fileName = null;
+
+                if ($request->hasFile('file')) {
+                    $file     =$request->file('file');
+                    $fileName =$file->getClientOriginalName();
+                    $filePath =$file->store('utip_files', 'public');
+                }
+
+                // 5. Simpan data baru untuk 7 kondisi
+                foreach ($request->kondisi as$idx => $kondisiName) {$planVal = ($request->plan[$idx] !== null && $request->plan[$idx] !== '') ? $request->plan[$idx] : null;
+                    $realVal = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '') ? $request->real_ratio[$idx] : null;
+                    $olFmVal = ($request->ol_fm[$idx] !== null && $request->ol_fm[$idx] !== '') ? $request->ol_fm[$idx] : null;
+
+                    // Kalau semua kosong, skip
+                    if (is_null($planVal) && is_null($realVal) && is_null($olFmVal)) {
+                        continue;
+                    }
+
+                    Collection::create([
+                        'user_id'         => Auth::id(),
+                        'type'            => $request->type,
+                        'kondisi'         => $kondisiName,
+                        'periode'         => $periodeDate,
+                        'status'          => 'active',
+                        'is_latest'       => true,
+                        'plan'            => $planVal,
+                        'ol_fm'           => $olFmVal,
+                        'real_ratio'      => $realVal,
+                        'real_updated_at' => !is_null($realVal) ? now() : null,
+                        'file_path'       => $filePath,
+                        'file_name'       => $fileName,
+                        'submit_token'    => $submitToken,
+                    ]);
+                }
+            });
+
+            return back()->with('success', 'Data UTIP berhasil disimpan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage())->withInput();
         }
-
-        // Reset semua record lama untuk type+periode ini
-        // supaya tidak tercampur dengan data upload baru
-        Collection::where('type', $request->type)
-        ->where('periode', $periodeDate)
-        ->update(['is_latest' => false]);
-        
-        // Simpan per kondisi
-        foreach ($request->kondisi as $idx => $kondisiName) {
-            $existing = Collection::where('type', $request->type)
-                ->where('periode', $periodeDate)
-                ->where('kondisi', $kondisiName)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $plan      = ($request->plan[$idx] !== null && $request->plan[$idx] !== '')
-                            ? $request->plan[$idx]
-                            : ($existing->plan ?? null);
-            $realRatio = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '')
-                            ? $request->real_ratio[$idx]
-                            : ($existing->real_ratio ?? null);
-            $olFm      = ($request->ol_fm[$idx] !== null && $request->ol_fm[$idx] !== '')
-                            ? $request->ol_fm[$idx]
-                            : ($existing->ol_fm ?? null);
-
-            $realUpdatedAt = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '')
-                            ? now()
-                            : ($existing->real_updated_at ?? null);
-
-            // Skip kondisi yang tidak diisi sama sekali
-            $planVal = ($request->plan[$idx] !== null && $request->plan[$idx] !== '') ? $request->plan[$idx] : null;
-            $realVal = ($request->real_ratio[$idx] !== null && $request->real_ratio[$idx] !== '') ? $request->real_ratio[$idx] : null;
-            $olFmVal = ($request->ol_fm[$idx] !== null && $request->ol_fm[$idx] !== '') ? $request->ol_fm[$idx] : null;
-
-            // Kalau semua kosong, skip — tidak perlu simpan
-            if (is_null($planVal) && is_null($realVal) && is_null($olFmVal)) {
-                continue;
-            }
-
-           Collection::create([
-            'user_id'         => Auth::id(),
-            'type'            => $request->type,
-            'kondisi'         => $kondisiName,
-            'periode'         => $periodeDate,
-            'status'          => 'active',
-            'is_latest'       => true,
-            'plan'            => $planVal ?? ($existing->plan ?? null),
-            'ol_fm'           => $olFmVal ?? ($existing->ol_fm ?? null),
-            'real_ratio'      => $realVal ?? ($existing->real_ratio ?? null),
-            'real_updated_at' => !is_null($realVal) ? now() : ($existing->real_updated_at ?? null),
-            'file_path'       => $filePath,
-            'file_name'       => $fileName,
-            'submit_token'    => $submitToken,
-            ]);
-        }
-
-        return back()->with('success', 'Data UTIP berhasil disimpan');
     }
 
     public function utipPreviewImport(Request $request)
