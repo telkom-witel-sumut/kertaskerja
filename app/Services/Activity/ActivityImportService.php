@@ -110,15 +110,20 @@ class ActivityImportService
                     'peran_pic_1' => $row[$headerMap['peran_pic_1']] ?? null,
                 ];
 
-                $errors = $this->validateActivityRow($stagingRow);
-
-                if (!empty($errors)) {
-                    $stagingRow['validation_status'] = 'invalid';
-                    $stagingRow['validation_errors'] = json_encode($errors);
-                    $invalidRows++;
+                if ($this->isEmptySourceRow($row)) {
+                    $stagingRow['validation_status'] = 'empty';
+                    $stagingRow['validation_errors'] = null;
                 } else {
-                    $stagingRow['validation_status'] = 'valid';
-                    $validRows++;
+                    $errors = $this->validateActivityRow($stagingRow);
+
+                    if (!empty($errors)) {
+                        $stagingRow['validation_status'] = 'invalid';
+                        $stagingRow['validation_errors'] = json_encode($errors);
+                        $invalidRows++;
+                    } else {
+                        $stagingRow['validation_status'] = 'valid';
+                        $validRows++;
+                    }
                 }
 
                 $stagingRows[] = $stagingRow;
@@ -220,6 +225,17 @@ class ActivityImportService
         return $errors;
     }
 
+    private function isEmptySourceRow(array $row): bool
+    {
+        foreach ($row as $value) {
+            if ($value !== null && trim((string) $value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function confirm(ActivityImport $import): void
     {
         DB::transaction(function () use ($import) {
@@ -233,38 +249,79 @@ class ActivityImportService
                 ->where('validation_status', 'valid')
                 ->get();
 
-            foreach ($validRows->chunk(500) as $chunk) {
-                $activities = $chunk->map(function ($row) {
-                    return [
-                        'import_id' => $row->import_id,
-                        'source_id' => $row->source_id,
-                        'source_row' => $row->source_row,
-                        'nik' => $row->nik,
-                        'name' => $row->name,
-                        'role' => $row->role,
-                        'am_type' => $row->am_type,
-                        'division' => $row->division,
-                        'segment' => $row->segment,
-                        'regional' => $row->regional,
-                        'witel' => $row->witel,
-                        'ca_name' => $row->ca_name,
-                        'nipnas' => $row->nipnas,
-                        'activity_start_date' => $row->activity_start_date,
-                        'activity_end_date' => $row->activity_end_date,
-                        'created_at_source' => $row->created_at_source,
-                        'label' => $row->label,
-                        'activity_type' => $row->activity_type,
-                        'activity_notes' => $row->activity_notes,
-                        'classification_status' => 'pending',
-                        'nama_pic_1' => $row->nama_pic_1,
-                        'jabatan_pic_1' => $row->jabatan_pic_1,
-                        'peran_pic_1' => $row->peran_pic_1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                })->all();
+            $seenSourceIds = [];
 
-                DB::table('activities')->insert($activities);
+            foreach ($validRows->chunk(500) as $chunk) {
+                $sourceIds = $chunk
+                    ->pluck('source_id')
+                    ->map(fn($sourceId) => trim((string) $sourceId))
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                $existingSourceIds = DB::table('activities')
+                    ->whereIn('source_id', $sourceIds)
+                    ->pluck('source_id')
+                    ->map(fn($sourceId) => trim((string) $sourceId))
+                    ->all();
+
+                $existingLookup = array_fill_keys($existingSourceIds, true);
+
+                $activities = $chunk
+                    ->filter(function ($row) use ($existingLookup, &$seenSourceIds) {
+                        $sourceId = trim((string) $row->source_id);
+
+                        if ($sourceId === '') {
+                            return false;
+                        }
+
+                        if (isset($existingLookup[$sourceId])) {
+                            return false;
+                        }
+
+                        if (isset($seenSourceIds[$sourceId])) {
+                            return false;
+                        }
+
+                        $seenSourceIds[$sourceId] = true;
+
+                        return true;
+                    })
+                    ->map(function ($row) {
+                        return [
+                            'import_id' => $row->import_id,
+                            'source_id' => trim((string) $row->source_id),
+                            'source_row' => $row->source_row,
+                            'nik' => $row->nik,
+                            'name' => $row->name,
+                            'role' => $row->role,
+                            'am_type' => $row->am_type,
+                            'division' => $row->division,
+                            'segment' => $row->segment,
+                            'regional' => $row->regional,
+                            'witel' => $row->witel,
+                            'ca_name' => $row->ca_name,
+                            'nipnas' => $row->nipnas,
+                            'activity_start_date' => $row->activity_start_date,
+                            'activity_end_date' => $row->activity_end_date,
+                            'created_at_source' => $row->created_at_source,
+                            'label' => $row->label,
+                            'activity_type' => $row->activity_type,
+                            'activity_notes' => $row->activity_notes,
+                            'classification_status' => 'pending',
+                            'nama_pic_1' => $row->nama_pic_1,
+                            'jabatan_pic_1' => $row->jabatan_pic_1,
+                            'peran_pic_1' => $row->peran_pic_1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                if (!empty($activities)) {
+                    DB::table('activities')->insert($activities);
+                }
             }
 
             $import->update([
