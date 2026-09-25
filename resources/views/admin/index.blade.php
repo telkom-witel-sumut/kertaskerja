@@ -24,7 +24,9 @@
                                 Management System</p>
                         </div>
                     </div>
+                    
                     <div class="flex items-center space-x-4">
+                        {{-- Tombol View Report (Tetap Ada) --}}
                         <a href="{{ route('report.index') }}"
                             class="flex items-center space-x-2.5 bg-white border-2 border-slate-900 hover:bg-red-600 hover:border-red-600 text-slate-900 hover:text-white px-6 py-3 rounded-xl font-black text-xs transition-all duration-300 shadow-sm group uppercase tracking-wider">
                             <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none"
@@ -34,6 +36,17 @@
                             </svg>
                             <span>View Report</span>
                         </a>
+
+                        {{-- Tombol Menu (Baru ditambahkan di sebelah kiri Logout) --}}
+                        <a href="{{ route('dashboard.select') }}"
+                            class="flex items-center space-x-2 bg-white border-2 border-slate-900 hover:bg-red-600 hover:border-red-600 text-slate-900 hover:text-white px-5 py-3 rounded-xl font-black text-xs transition-all duration-300 shadow-sm group uppercase tracking-wider">
+                            <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                            </svg>
+                            <span>Menu</span>
+                        </a>
+
+                        {{-- Tombol Logout (Tetap Ada) --}}
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit"
