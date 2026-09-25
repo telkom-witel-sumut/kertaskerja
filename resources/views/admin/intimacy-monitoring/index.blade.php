@@ -41,9 +41,9 @@
 
                     <a href="{{ route('admin.index') }}"
                         class="flex items-center space-x-2.5 bg-white border-2 border-slate-900
-                                                                                                                                   hover:bg-slate-900 text-slate-900 hover:text-white
-                                                                                                                                   px-6 py-3 rounded-xl font-black text-xs
-                                                                                                                                   transition-all duration-300 shadow-sm uppercase tracking-wider">
+                                                                                                                                       hover:bg-slate-900 text-slate-900 hover:text-white
+                                                                                                                                       px-6 py-3 rounded-xl font-black text-xs
+                                                                                                                                       transition-all duration-300 shadow-sm uppercase tracking-wider">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
                         </svg>
@@ -56,10 +56,10 @@
 
                         <button type="submit"
                             class="group flex items-center space-x-2.5
-                                                                                                                                       bg-slate-900 hover:bg-red-600 text-white
-                                                                                                                                       font-bold text-sm px-5 py-3 rounded-xl
-                                                                                                                                       transition-all duration-300 shadow-md
-                                                                                                                                       hover:shadow-lg hover:shadow-red-200">
+                                                                                                                                           bg-slate-900 hover:bg-red-600 text-white
+                                                                                                                                           font-bold text-sm px-5 py-3 rounded-xl
+                                                                                                                                           transition-all duration-300 shadow-md
+                                                                                                                                           hover:shadow-lg hover:shadow-red-200">
                             <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -79,7 +79,7 @@
         @if (session('success'))
             <div
                 class="mb-6 bg-green-50 border border-green-200 text-green-800
-                                                                                                                                                                                                                                px-5 py-4 rounded-xl flex items-start space-x-3">
+                                                                                                                                                                                                                                        px-5 py-4 rounded-xl flex items-start space-x-3">
 
                 <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -102,7 +102,7 @@
         @if ($errors->any())
             <div
                 class="mb-6 bg-red-50 border border-red-200 text-red-800
-                                                                                                                                                                                                                                px-5 py-4 rounded-xl">
+                                                                                                                                                                                                                                        px-5 py-4 rounded-xl">
 
                 <div class="flex items-start space-x-3">
 
@@ -137,7 +137,7 @@
 
                     <div
                         class="w-10 h-10 rounded-xl bg-red-50 text-red-600
-                                                                                                                                    flex items-center justify-center">
+                                                                                                                                        flex items-center justify-center">
 
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -178,10 +178,10 @@
                                     Periode
                                 </label>
 
-                                <input type="month" id="period" name="period" value="{{ old('period') }}" required class="w-full h-12 px-4 bg-slate-50 border border-slate-300
-                                                   rounded-xl text-sm text-slate-700 font-semibold
-                                                   focus:outline-none focus:ring-2 focus:ring-red-100
-                                                   focus:border-red-400 transition" />
+                                <input type="month" id="period" name="period" value="{{ old('period') }}" class="w-full h-12 px-4 bg-slate-50 border border-slate-300
+                                                       rounded-xl text-sm text-slate-700 font-semibold
+                                                       focus:outline-none focus:ring-2 focus:ring-red-100
+                                                       focus:border-red-400 transition" />
                             </div>
 
                             {{-- FILE --}}
@@ -192,16 +192,16 @@
                                 </label>
 
                                 <input type="file" id="file" name="file" accept=".xlsx,.xls" required class="block w-full h-12 text-sm text-slate-500
-                                                                   border border-slate-300 rounded-xl
-                                                                   cursor-pointer bg-slate-50
-                                                                   focus:outline-none focus:ring-2
-                                                                   focus:ring-red-100 focus:border-red-400
-                                                                   file:mr-4 file:h-full file:px-5
-                                                                   file:border-0 file:text-xs
-                                                                   file:font-black file:bg-slate-100
-                                                                   file:text-slate-700
-                                                                   hover:file:bg-slate-200
-                                                                   file:cursor-pointer" />
+                                                                       border border-slate-300 rounded-xl
+                                                                       cursor-pointer bg-slate-50
+                                                                       focus:outline-none focus:ring-2
+                                                                       focus:ring-red-100 focus:border-red-400
+                                                                       file:mr-4 file:h-full file:px-5
+                                                                       file:border-0 file:text-xs
+                                                                       file:font-black file:bg-slate-100
+                                                                       file:text-slate-700
+                                                                       hover:file:bg-slate-200
+                                                                       file:cursor-pointer" />
                             </div>
 
                         </div>
@@ -211,11 +211,11 @@
                         <div class="flex justify-end">
 
                             <button type="submit" class="h-12 px-7 inline-flex items-center justify-center
-                                                               space-x-2 bg-slate-900 hover:bg-red-600
-                                                               text-white rounded-xl font-black text-xs
-                                                               uppercase tracking-wider
-                                                               transition-all duration-300 shadow-md
-                                                               hover:shadow-lg hover:shadow-red-200">
+                                                                   space-x-2 bg-slate-900 hover:bg-red-600
+                                                                   text-white rounded-xl font-black text-xs
+                                                                   uppercase tracking-wider
+                                                                   transition-all duration-300 shadow-md
+                                                                   hover:shadow-lg hover:shadow-red-200">
                                 <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-125" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -316,7 +316,7 @@
 
                                         <div
                                             class="w-9 h-9 rounded-lg bg-green-50 text-green-600
-                                                                                                        flex items-center justify-center flex-shrink-0">
+                                                                                                                flex items-center justify-center flex-shrink-0">
 
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -375,11 +375,11 @@
 
                                         <a href="{{ route('admin.intimacy-monitoring.import.preview', $import) }}"
                                             class="inline-flex items-center space-x-2 px-4 py-2
-                                                                                                       rounded-lg border border-slate-300
-                                                                                                       text-slate-700 text-xs font-black
-                                                                                                       uppercase tracking-wider
-                                                                                                       hover:border-slate-900 hover:bg-slate-900
-                                                                                                       hover:text-white transition-all">
+                                                                                                               rounded-lg border border-slate-300
+                                                                                                               text-slate-700 text-xs font-black
+                                                                                                               uppercase tracking-wider
+                                                                                                               hover:border-slate-900 hover:bg-slate-900
+                                                                                                               hover:text-white transition-all">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -404,7 +404,7 @@
 
                                         <div
                                             class="w-12 h-12 rounded-xl bg-slate-100
-                                                                                                        text-slate-400 flex items-center justify-center">
+                                                                                                                text-slate-400 flex items-center justify-center">
 
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

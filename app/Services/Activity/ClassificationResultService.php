@@ -30,7 +30,6 @@ class ClassificationResultService
             $status = $response['status'];
 
             // Hapus hasil classification sebelumnya.
-            // Ini membuat proses aman ketika activity diproses ulang.
             $activity->activityEntities()->delete();
 
             if ($status !== 'no_match') {
@@ -45,6 +44,8 @@ class ClassificationResultService
             $activity->update([
                 'classification_status' => $this->mapStatus($status),
             ]);
+
+            $this->syncImportCounters($activity->import_id);
 
             return $activity->fresh([
                 'activityEntities.category',
@@ -152,6 +153,40 @@ class ClassificationResultService
             $matchMethod
         );
     }
+    private function mapStatus(string $status): string
+    {
+        return match ($status) {
+            'matched' => 'classified',
+            'review_required' => 'review_required',
+            'no_match' => 'no_match',
+        };
+    }
+    private function syncImportCounters(int $importId): void
+    {
+        $import = \App\Models\ActivityImport::query()
+            ->whereKey($importId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$import) {
+            return;
+        }
+
+        $counts = Activity::query()
+            ->where('import_id', $importId)
+            ->selectRaw("
+            SUM(CASE WHEN classification_status = 'classified' THEN 1 ELSE 0 END) AS classified_rows,
+            SUM(CASE WHEN classification_status = 'review_required' THEN 1 ELSE 0 END) AS review_required_rows,
+            SUM(CASE WHEN classification_status = 'no_match' THEN 1 ELSE 0 END) AS unclassified_rows
+        ")
+            ->first();
+
+        $import->update([
+            'classified_rows' => (int) ($counts->classified_rows ?? 0),
+            'review_required_rows' => (int) ($counts->review_required_rows ?? 0),
+            'unclassified_rows' => (int) ($counts->unclassified_rows ?? 0),
+        ]);
+    }
 
     private function createIfNotDuplicate(
         Activity $activity,
@@ -179,14 +214,5 @@ class ClassificationResultService
                 'match_method' => $matchMethod,
             ]);
         }
-    }
-
-    private function mapStatus(string $status): string
-    {
-        return match ($status) {
-            'matched' => 'classified',
-            'review_required' => 'review_required',
-            'no_match' => 'no_match',
-        };
     }
 }
