@@ -69,8 +69,11 @@ class AuthController extends Controller
      */
     protected function redirectByRole($role)
     {
+        if ($role === 'admin') {
+            return redirect()->route('dashboard.select');
+        } 
+        
         $redirects = [
-            'admin'       => '/admin',
             'gov'         => '/dashboard/gov',
             'soe'         => '/dashboard/soe',
             'sme'         => '/dashboard/sme',

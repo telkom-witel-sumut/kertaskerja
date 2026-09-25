@@ -28,6 +28,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/select-dashboard', function () {
+        return view('auth.select-dashboard');
+    })->name('dashboard.select');
     Route::get('/report', [ReportController::class, 'index'])->name('report.index');
     Route::get('/report/detail/{segment}/{type}', [ReportController::class, 'detail'])
         ->name('report.detail')
@@ -41,6 +44,17 @@ Route::middleware('auth')->group(function () {
     //     return redirect('/admin');
     // });
 
+    Route::get('/admin/intimacy-monitoring/dashboard', [IntimacyMonitoringController::class, 'dashboard'])
+        ->name('admin.intimacy-monitoring.dashboard');
+    Route::get('/admin/intimacy-monitoring', [IntimacyMonitoringController::class, 'index'])
+        ->name('admin.intimacy-monitoring');
+    Route::post('/admin/intimacy-monitoring/import', [IntimacyMonitoringController::class, 'store'])
+        ->name('admin.intimacy-monitoring.import');
+    Route::get('/admin/intimacy-monitoring/import/{import}', [IntimacyMonitoringController::class, 'preview'])
+        ->name('admin.intimacy-monitoring.import.preview');
+    Route::post('/admin/intimacy-monitoring/import/{import}/confirm', [IntimacyMonitoringController::class, 'confirm'])
+        ->name('admin.intimacy-monitoring.import.confirm');
+    
     // Admin routes (role: admin)
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');

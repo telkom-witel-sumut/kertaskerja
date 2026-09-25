@@ -39,7 +39,8 @@
 
                 <div class="flex items-center space-x-4">
 
-                    <a href="{{ route('admin.index') }}"
+                    {{-- Tombol Back to Dashboard diarahkan ke dashboard Intimacy --}}
+                    <a href="{{ route('admin.intimacy-monitoring.dashboard') }}"
                         class="flex items-center space-x-2.5 bg-white border-2 border-slate-900
                                                                                                                                        hover:bg-slate-900 text-slate-900 hover:text-white
                                                                                                                                        px-6 py-3 rounded-xl font-black text-xs
