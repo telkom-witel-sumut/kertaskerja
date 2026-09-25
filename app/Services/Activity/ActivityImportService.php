@@ -279,7 +279,6 @@ class ActivityImportService
                             return false;
                         }
 
-                        // Sudah pernah di-import.
                         if (isset($existingLookup[$sourceId])) {
                             return false;
                         }
