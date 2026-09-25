@@ -4,12 +4,77 @@ namespace App\Http\Controllers;
 
 use App\Services\Activity\ActivityImportService;
 use App\Models\ActivityImport;
+use App\Models\Activity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use RuntimeException;
+
 class IntimacyMonitoringController extends Controller
 {
-    public function index()
+    private ActivityImportService $activityImportService;
+
+    public function __construct(ActivityImportService $activityImportService)
+    {
+        $this->activityImportService = $activityImportService;
+    }
+
+    public function dashboard(Request $request)
+    {
+        $bulan = $request->input('bulan', date('n'));
+        $tahun = date('Y');
+
+        $rawAmData = collect([
+            'Nama AM 3' => collect([
+                ['ca_name' => 'Pemkab Deli Serdang', 'local_gov' => 4, 'local_partners' => 4, 'national_partners' => 4, 'nap' => 4, 'influencer' => 4],
+                ['ca_name' => 'Pemkab Serdang Bedagai', 'local_gov' => 3, 'local_partners' => 3, 'national_partners' => 3, 'nap' => 3, 'influencer' => 3],
+                ['ca_name' => 'Pemkab Karo', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Batubara', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+            ]),
+            'Nama AM 5' => collect([
+                ['ca_name' => 'Pemkab Tapanuli Utara', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Toba', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Humbang Hasundutan', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+                ['ca_name' => 'Pemkab Samosir', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+            ]),
+            'Nama AM 1' => collect([
+                ['ca_name' => 'Pemkot Medan', 'local_gov' => 8, 'local_partners' => 8, 'national_partners' => 8, 'nap' => 8, 'influencer' => 8],
+                ['ca_name' => 'Pemkot Siantar', 'local_gov' => 3, 'local_partners' => 3, 'national_partners' => 3, 'nap' => 3, 'influencer' => 3],
+                ['ca_name' => 'Pemprov Sumut', 'local_gov' => 3, 'local_partners' => 3, 'national_partners' => 3, 'nap' => 3, 'influencer' => 3],
+                ['ca_name' => 'Pemkot Tebing Tinggi', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+            ]),
+            'Nama AM 4' => collect([
+                ['ca_name' => 'Pemkab Simalungun', 'local_gov' => 3, 'local_partners' => 3, 'national_partners' => 3, 'nap' => 3, 'influencer' => 3],
+                ['ca_name' => 'Pemkab Asahan', 'local_gov' => 3, 'local_partners' => 3, 'national_partners' => 3, 'nap' => 3, 'influencer' => 3],
+                ['ca_name' => 'Pemkab Labuhanbatu', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Langkat', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+            ]),
+            'Nama AM 2' => collect([
+                ['ca_name' => 'Pemkab Padang Lawas', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Mandailing Natal', 'local_gov' => 2, 'local_partners' => 2, 'national_partners' => 2, 'nap' => 2, 'influencer' => 2],
+                ['ca_name' => 'Pemkab Tapanuli Selatan', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+                ['ca_name' => 'Pemkab Tapanuli Tengah', 'local_gov' => 1, 'local_partners' => 1, 'national_partners' => 1, 'nap' => 1, 'influencer' => 1],
+            ]),
+        ]);
+
+        $recapData = $rawAmData->map(function ($caGroups) {
+            $caMapped = $caGroups->map(function ($row) {
+                $visit = $row['local_gov'] + $row['local_partners'] + $row['national_partners'] + $row['nap'] + $row['influencer'];
+                $row['visit'] = $visit;
+                return $row;
+            })->sortByDesc('visit');
+
+            return [
+                'ca_groups' => $caMapped,
+                'total_am'  => $caMapped->sum('visit'),
+            ];
+        })->sortByDesc(function ($amData) {
+            return $amData['total_am'];
+        });
+
+        return view('admin.intimacy-monitoring.dashboard.index', compact('recapData', 'bulan'));
+    }
+
+    public function index(Request $request)
     {
         $imports = ActivityImport::query()
             ->latest()
@@ -18,13 +83,6 @@ class IntimacyMonitoringController extends Controller
         return view('admin.intimacy-monitoring.index', [
             'imports' => $imports,
         ]);
-    }
-
-    private ActivityImportService $activityImportService;
-
-    public function __construct(ActivityImportService $activityImportService)
-    {
-        $this->activityImportService = $activityImportService;
     }
 
     public function preview(Request $request, ActivityImport $import)
@@ -38,20 +96,10 @@ class IntimacyMonitoringController extends Controller
                 );
         };
 
-        // Summary
         $totalRows = $import->rows()->count();
-
-        $validRows = $import->rows()
-            ->where('validation_status', 'valid')
-            ->count();
-
-        $invalidRows = $import->rows()
-            ->where('validation_status', 'invalid')
-            ->count();
-
-        $emptyRows = $import->rows()
-            ->where('validation_status', 'empty')
-            ->count();
+        $validRows = $import->rows()->where('validation_status', 'valid')->count();
+        $invalidRows = $import->rows()->where('validation_status', 'invalid')->count();
+        $emptyRows = $import->rows()->where('validation_status', 'empty')->count();
 
         $alreadyImportedRows = $import->rows()
             ->where('validation_status', 'valid')
@@ -61,7 +109,6 @@ class IntimacyMonitoringController extends Controller
 
         $readyRows = $validRows - $alreadyImportedRows;
 
-        // Filter
         $filter = $request->query('filter', 'all');
 
         $rowsQuery = $import->rows()
@@ -121,6 +168,7 @@ class IntimacyMonitoringController extends Controller
             'readyRows' => $readyRows,
         ]);
     }
+
     public function store(Request $request)
     {
         $request->validate([
