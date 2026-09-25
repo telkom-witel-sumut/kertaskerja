@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Activity extends Model
 {
@@ -53,13 +54,18 @@ class Activity extends Model
 
     public function entities(): BelongsToMany
     {
- return $this->belongsToMany(
-        Entity::class,
-        'activity_entities'
-    )->withPivot([
-        'category_id',
-        'match_score',
-        'match_method',
-    ])->withTimestamps();
+        return $this->belongsToMany(
+            Entity::class,
+            'activity_entities'
+        )->withPivot([
+                    'category_id',
+                    'match_score',
+                    'match_method',
+                ])->withTimestamps();
+    }
+
+    public function classificationReview(): HasOne
+    {
+        return $this->hasOne(ActivityClassificationReview::class);
     }
 }

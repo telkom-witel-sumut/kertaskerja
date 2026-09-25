@@ -203,6 +203,18 @@ Route::middleware('auth')->group(function () {
             '/intimacy-monitoring/import/{import}/confirm',
             [IntimacyMonitoringController::class, 'confirm']
         )->name('admin.intimacy-monitoring.import.confirm');
+        Route::get(
+            '/intimacy-monitoring/activities',
+            [IntimacyMonitoringController::class, 'activities']
+        )->name('admin.intimacy-monitoring.activities');
+        Route::get(
+            '/intimacy-monitoring/activities/{import}/classification-status',
+            [IntimacyMonitoringController::class, 'classificationStatus']
+        )->name('admin.intimacy-monitoring.activities.status');
+        Route::post(
+            '/intimacy-monitoring/activities/{activity}/review',
+            [IntimacyMonitoringController::class, 'reviewClassification']
+        )->name('admin.intimacy-monitoring.activities.review');
 
         // Private dashboard (role: private) - admin access
         // on-hand upload listing and actions

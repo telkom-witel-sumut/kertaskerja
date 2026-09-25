@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Services\Activity;
+use App\Jobs\ClassifyActivityJob;
+use App\Models\Activity;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
@@ -250,8 +252,10 @@ class ActivityImportService
                 ->get();
 
             $seenSourceIds = [];
+            $newSourceIds = [];
 
             foreach ($validRows->chunk(500) as $chunk) {
+
                 $sourceIds = $chunk
                     ->pluck('source_id')
                     ->map(fn($sourceId) => trim((string) $sourceId))
@@ -279,6 +283,7 @@ class ActivityImportService
                             return false;
                         }
 
+                        // Duplicate dalam batch yang sama.
                         if (isset($seenSourceIds[$sourceId])) {
                             return false;
                         }
@@ -321,12 +326,29 @@ class ActivityImportService
 
                 if (!empty($activities)) {
                     DB::table('activities')->insert($activities);
+
+                    foreach ($activities as $activity) {
+                        $newSourceIds[] = $activity['source_id'];
+                    }
                 }
             }
 
             $import->update([
                 'status' => 'confirmed',
             ]);
+
+            if (!empty($newSourceIds)) {
+
+                $activityIds = Activity::query()
+                    ->where('import_id', $import->id)
+                    ->whereIn('source_id', $newSourceIds)
+                    ->pluck('id');
+
+                foreach ($activityIds as $activityId) {
+                    ClassifyActivityJob::dispatch($activityId)
+                        ->afterCommit();
+                }
+            }
         });
     }
 }
